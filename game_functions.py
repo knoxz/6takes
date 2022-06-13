@@ -12,10 +12,12 @@ def create_player(player_number):
 
 
 def reset_playing_cards():
+    from game import debug_print
     cards.clear()
     for i in range(104):
         cards.append(Card(i + 1))
-    print(f"Playing Cards: {cards}")
+    if debug_print:
+        print(f"Playing Cards: {cards}")
     random.shuffle(cards)
 
 
@@ -29,22 +31,27 @@ def reset_game():
 
 def play_round():
     for i in range(10):
-        print(f"Round {i + 1}")
+        from game import debug_print
+        if debug_print:
+            print(f"Round {i + 1}")
         for player in players:
             # This is random for now.
             player.select_playing_card()
         sorted_player_list = sorted(players, key=lambda player_sort: player_sort.played.number, reverse=True)
-        print(f"Sorted Player List: {sorted_player_list}")
-        table.print_table()
+        if debug_print:
+            print(f"Sorted Player List: {sorted_player_list}")
+            table.print_table()
         for _ in range(len(players)):
             playing_player = sorted_player_list.pop()
-            print(f"Player {playing_player.id} will play Card {playing_player.played} will be played!")
+            if debug_print:
+                print(f"Player {playing_player.id} will play Card {playing_player.played} will be played!")
             penalty = table.play_card_onto_table(playing_player.played)
             for player in players:
                 if player.id == playing_player.id:
                     player.played = None
                     player.penalty_sum = player.penalty_sum + penalty
-            table.print_table()
+            if debug_print:
+                table.print_table()
 
 
 def start_game():
