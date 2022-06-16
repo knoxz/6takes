@@ -1,0 +1,13 @@
+4 kartenreihen auf tisch mit je 1 karte
+karten werden aufsteigend sortiert
+
+alle legen verdeckt 1 karte ab
+alle gleichzeitig aufdecken
+niedrigste karte wird zuerst angelegt
+dann alle anderen karten
+
+wenn stapel voll ist (6 karten) dann muss stapel aufgenommen werden
+    -> neue karte wird stattdessen gelegt
+
+wenn karte nicht angelegt werden kann
+    -> dann stapel mit geringsten minuspunkten auswählen und durch karte ersetzen

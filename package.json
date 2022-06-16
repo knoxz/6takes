@@ -1,0 +1,26 @@
+{
+  "name": "take6-clone",
+  "version": "1.0.0",
+  "description": "Simple 'Take 6' clone for demo purposes",
+  "main": "index.js",
+  "repository": "https://github.com/???",
+  "author": "Stefan Gaertner, Dominik Molitor",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "del": "^6.0.0",
+    "eslint": "^8.12.0",
+    "gulp": "^4.0.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-sass": "^5.1.0",
+    "gulp-token-replace": "^1.1.5",
+    "gulp-uglify": "^3.0.2",
+    "mocha": "^9.2.2",
+    "sass": "^1.50.0",
+    "uglify-js": "^3.15.4"
+  },
+  "scripts": {
+    "test": "mocha",
+    "dist": "gulp"
+  }
+}

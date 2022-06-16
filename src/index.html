@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link href="/static/app.css?v={{main.version}}" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.png">
+</head>
+
+<body class="dark">
+
+    <div class="container">
+
+        <div class="points"></div>
+
+        <div class="table"></div>
+
+        <div class="deck player-deck"></div>
+
+    </div>
+
+    <script type="text/javascript" src="/static/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="/static/app.min.js?v={{main.version}}"></script>
+    <script type="text/javascript">
+        const G = new Game();
+        window.addEventListener('DOMContentLoaded', (_evt) => G.start());
+    </script>
+
+</body>
+
+</html>
