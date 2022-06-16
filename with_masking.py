@@ -153,17 +153,21 @@ class SixthTakes(InvalidActionEnvDiscrete):
             print(f"Sorted Player List: {sorted_player_list}")
         if debug_print:
             self.table.print_table()
+        round_list = []
         for _ in range(len(self.players)):
             playing_player = sorted_player_list.pop()
+            card_played = playing_player.played
             if debug_print:
                 print(f"Player {playing_player.id} will play Card {playing_player.played} will be played!")
-            penalty = self.table.play_card_onto_table(playing_player.played)
+            penalty, pile_id, replacing = self.table.play_card_onto_table(playing_player.played)
+            round_list.append([playing_player.id, [card_played.number, card_played.value], pile_id, replacing])
             for player in self.players:
                 if player.id == playing_player.id:
                     player.played = None
                     player.penalty_sum = player.penalty_sum + penalty
             if debug_print:
                 self.table.print_table()
+        return round_list
 
 
 if __name__ == "__main__":

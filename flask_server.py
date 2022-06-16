@@ -17,7 +17,7 @@ masking_env = ActionMasker(masking_env, mask_fn)
 current_observation = masking_env.get_obs()
 
 
-def observation_to_json(observation, players, done):
+def observation_to_json(observation, players, done, played_round=[]):
     player_dict = {}
     for player in players:
         player_dict[f"player_{player.id}"] = {"penalty_sum": int(player.penalty_sum)}
@@ -26,6 +26,7 @@ def observation_to_json(observation, players, done):
         "piles": observation["piles"].astype(int).tolist(),
         "played_cards": observation["played_cards"].astype(int).tolist(),
         "player_dict": player_dict,
+        "played_round": played_round,
         "done": done
     }
     return jsonify(to_json_dict)
@@ -56,10 +57,10 @@ def make_action():
         ai_action, _ = model.predict(current_observation)
         masking_env.players[0].select_playing_card(ai_action)
         masking_env.players[1].select_playing_card(human_step)
-        masking_env.play_round()
+        played_round = masking_env.play_round()
         current_observation = masking_env.get_obs()
         print(current_observation)
-        return observation_to_json(current_observation, masking_env.players, masking_env.done)
+        return observation_to_json(current_observation, masking_env.players, masking_env.done, played_round)
 
 
 @app.route('/')

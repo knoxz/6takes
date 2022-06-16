@@ -96,7 +96,7 @@ class Table:
                     f"Replacing Table {table_to_replace}: {self.table_slots[table_to_replace]} and receiving penalty of: {lowest_value}")
             self.table_slots[table_to_replace].clear()
             self.table_slots[table_to_replace].append(card)
-            return lowest_value
+            return lowest_value, table_to_replace, True
         else:
             if len(self.table_slots[tableslot_to_play_on]) == 5:
                 value_sum = 0
@@ -107,10 +107,10 @@ class Table:
                         f"Replacing Table {tableslot_to_play_on}: {self.table_slots[tableslot_to_play_on]} and receiving penalty of: {value_sum}")
                 self.table_slots[tableslot_to_play_on].clear()
                 self.table_slots[tableslot_to_play_on].append(card)
-                return value_sum
+                return value_sum, tableslot_to_play_on, True
             else:
                 self.table_slots[tableslot_to_play_on].append(card)
-                return 0
+                return 0, tableslot_to_play_on, False
 
 
 class Player:
