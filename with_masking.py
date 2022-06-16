@@ -1,4 +1,5 @@
 # Settings
+import json
 import random
 from pathlib import Path
 
@@ -188,6 +189,15 @@ if __name__ == "__main__":
     states = env.observation_space.shape
     env.reset()
     observation = env.get_obs()
+
+    to_json_dict = {
+                "hand_cards": observation["hand_cards"].tolist(),
+                "piles": observation["piles"].tolist(),
+                "played_cards": observation["played_cards"].tolist(),
+            }
+    json_string = json.dumps(to_json_dict, indent=4)
+
+    print(json_string)
     actions = env.action_space.n
 
     log_path = Path("Training", "Logs")
