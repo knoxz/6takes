@@ -86,7 +86,7 @@ class Game {
 
     nextRound(data) {
         // TODO: fetch game state
-        const fixeddata = jQuery.get('assets/test.state.json', data => {
+        const fixeddata = jQuery.get('/static/test.state.json', data => {
             this.display(data);
         });
     }
