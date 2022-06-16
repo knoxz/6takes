@@ -119,6 +119,7 @@ class Game {
             contentType: 'application/json',
             type: 'POST',
         }).done(data => {
+            console.log(data);
             this.display(data);
         });
     }
