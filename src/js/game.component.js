@@ -40,6 +40,7 @@ class Deck {
             el.addEventListener('click', (ev) => {
                 WaitBox.show();
                 const idx = ev.target.dataset.idx;
+                console.log('posting', idx);
                 postAction(idx);
             });
         });
@@ -58,6 +59,7 @@ class Table {
     display() {
         const selector = '.table';
         const container = document.querySelector(selector);
+        container.innerHTML = '';
 
         this.rows.forEach(row => {
             const cards = row.map(card => card.toDiv()).join('');
@@ -107,7 +109,7 @@ class Game {
         const container = document.querySelector('.points');
         container.innerHTML = '';
         players.forEach(p => {
-            const html = `<div class="entry"><div>${p.name}</div><div class="sum">${p.sum}</div></div>`;
+            const html = `<div class="entry"><div>${p.name}</div><div class="sum">-${p.sum}</div></div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
     }
@@ -119,8 +121,7 @@ class Game {
             contentType: 'application/json',
             type: 'POST',
         }).done(data => {
-            console.log(data);
-            this.display(data);
+            this.display(JSON.parse(data));
         });
     }
 }
