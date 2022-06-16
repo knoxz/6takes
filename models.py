@@ -1,7 +1,8 @@
 import random
 
-import numpy
 import numpy as np
+
+from without_masking import number_of_players
 
 
 class Card:
@@ -36,6 +37,7 @@ class Table:
         self.slots = slots
         self.table_slots = []
         self.played_cards = []
+        self.played_this_round = []
         for _ in range(slots):
             self.table_slots.append([])
 
@@ -46,10 +48,15 @@ class Table:
                 if y < len(self.table_slots[i]):
                     table_piles_array[i][y][0] = self.table_slots[i][y].number
                     table_piles_array[i][y][1] = self.table_slots[i][y].value
-        played_cards_array = np.zeros((110, 2))
+        played_cards_array = np.zeros((4 + (10 * number_of_players), 2))
         for i in range(len(self.played_cards)):
             played_cards_array[i][0] = self.played_cards[i].number
             played_cards_array[i][1] = self.played_cards[i].value
+        # played_this_round = np.zeros((number_of_players, 2))
+        # for i in range(len(self.played_this_round)):
+        #     played_this_round[i][0] = self.played_this_round[i].number
+        #     played_this_round[i][1] = self.played_this_round[i].value
+        # return table_piles_array, played_cards_array, played_this_round
         return table_piles_array, played_cards_array
 
     def print_table(self):
@@ -71,7 +78,7 @@ class Table:
             if card.number > table_slot[-1].number and distance > (card.number - table_slot[-1].number):
                 tableslot_to_play_on = idx
                 distance = card.number - table_slot[-1].number
-        from game import debug_print
+        from without_masking import debug_print
         if debug_print:
             print(f"Playing Card: {card} on Table: {tableslot_to_play_on} with distance {distance}")
         if tableslot_to_play_on == -1:
@@ -110,6 +117,7 @@ class Player:
     def __init__(self, id):
         self.id = id
         self.hand_cards = []
+        self.played_card_index = 0
         self.played = None
         self.penalty_cards = []
         self.penalty_sum = 0
@@ -119,14 +127,17 @@ class Player:
         for i in range(len(self.hand_cards)):
             array[i][0] = self.hand_cards[i].number
             array[i][1] = self.hand_cards[i].value
+        # return array, self.played_card_index
         return array
 
     def select_playing_card(self, played_card_index=None):
         if played_card_index is None:
+            self.played_card_index = 0
             self.played = self.hand_cards.pop(random.randrange(len(self.hand_cards)))
-            return False
+            return True
+        self.played_card_index = played_card_index
         if played_card_index >= len(self.hand_cards):
-            print(f"Selected out of bounce Card: {played_card_index} // {self.hand_cards}")
+            # print(f"Selected out of bounce Card: {played_card_index} // {self.hand_cards}")
             self.played = self.hand_cards.pop(random.randrange(len(self.hand_cards)))
             return False
         self.played = self.hand_cards.pop(played_card_index)
