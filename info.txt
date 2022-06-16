@@ -11,3 +11,25 @@ wenn stapel voll ist (6 karten) dann muss stapel aufgenommen werden
 
 wenn karte nicht angelegt werden kann
     -> dann stapel mit geringsten minuspunkten auswählen und durch karte ersetzen
+
+---
+
+player_0 = AI
+player_1 = human
+others = random
+
+TODO
+- end screen mit reload
+- waitbox um doppelte klicks zu verhindern
+- styling der player rechts
+- allgemeines styling
+- "done" auswerten
+
+played_cards_with_rounds:
+- liste der gespielten karten, bestenfalls animieren
+(models.py > Table.play_card_onto_table)
+
+----
+[ [4, [41, 1], 0, false], [...], ... ]
+[ [<player_id>, [<num>, <cattle>], <row>, <replacing>], ... ]
+----
