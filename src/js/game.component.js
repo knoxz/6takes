@@ -19,7 +19,11 @@ class Card {
     toDiv() {
         const toSkull = () => '<img src="/static/skull-solid.svg">';
         const skulls = Array.from({ length: this.cattle }, toSkull).join('');
-        return `<div class="card" data-idx="${this.idx}"><div class="skulls top">${skulls}</div><div class="num">${this.num}</div><div class="skulls bottom">${skulls}</div></div>`;
+        return `
+            <div class="card" data-idx="${this.idx}">
+                <div class="skulls top">${skulls}</div>
+                <div class="num">${this.num}</div>
+            </div>`;
     }
 }
 
@@ -109,7 +113,12 @@ class Game {
         const container = document.querySelector('.points');
         container.innerHTML = '';
         players.forEach(p => {
-            const html = `<div class="entry"><div>${p.name}</div><div class="sum">-${p.sum}</div></div>`;
+            p.sum *= -1;
+            const html = `
+                <div class="entry ${p.name}">
+                    <div>${p.name}</div>
+                    <div class="sum">${p.sum}</div>
+                </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
     }
