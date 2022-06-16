@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
 
@@ -14,6 +14,7 @@ model_path = Path("Training", "Models", "Maskable_PPO")
 model = MaskablePPO.load(model_path, print_system_info=True)
 masking_env = SixthTakes()
 masking_env = ActionMasker(masking_env, mask_fn)
+current_observation = masking_env.get_obs()
 
 
 def observation_to_json(observation, players, done):
@@ -21,13 +22,13 @@ def observation_to_json(observation, players, done):
     for player in players:
         player_dict[f"player_{player.id}"] = {"penalty_sum": int(player.penalty_sum)}
     to_json_dict = {
-        "hand_cards": observation["hand_cards"].astype(int).tolist(),
+        "hand_cards": players[1].array().astype(int).tolist(),
         "piles": observation["piles"].astype(int).tolist(),
         "played_cards": observation["played_cards"].astype(int).tolist(),
         "player_dict": player_dict,
         "done": done
     }
-    return json.dumps(to_json_dict, indent=4)
+    return jsonify(to_json_dict)
 
 
 # masking_env.reset()
@@ -48,6 +49,7 @@ def make_action():
     if move["action"] == -1:
         masking_env.reset()
         current_observation = masking_env.get_obs()
+        print(current_observation)
         return observation_to_json(current_observation, masking_env.players, masking_env.done)
     else:
         human_step = move["action"]
@@ -56,6 +58,7 @@ def make_action():
         masking_env.players[1].select_playing_card(human_step)
         masking_env.play_round()
         current_observation = masking_env.get_obs()
+        print(current_observation)
         return observation_to_json(current_observation, masking_env.players, masking_env.done)
 
 
