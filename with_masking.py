@@ -15,8 +15,8 @@ from gym import spaces
 
 import models
 
-debug_print = False
-info_print = False
+debug_print = True
+info_print = True
 
 # 6 Nimmt Config
 number_of_players = 10
@@ -191,10 +191,10 @@ if __name__ == "__main__":
     observation = env.get_obs()
 
     to_json_dict = {
-                "hand_cards": observation["hand_cards"].tolist(),
-                "piles": observation["piles"].tolist(),
-                "played_cards": observation["played_cards"].tolist(),
-            }
+        "hand_cards": observation["hand_cards"].astype(int).tolist(),
+        "piles": observation["piles"].astype(int).tolist(),
+        "played_cards": observation["played_cards"].astype(int).tolist(),
+    }
     json_string = json.dumps(to_json_dict, indent=4)
 
     print(json_string)
@@ -208,9 +208,9 @@ if __name__ == "__main__":
                         n_epochs=n_epochs)
     model.learn(total_timesteps=total_timesteps, log_interval=4)
 
-    dqn_path = Path("Training", "Models", "Maskable_PPO")
+    model_path = Path("Training", "Models", "Maskable_PPO")
 
-    model.save(dqn_path)
+    model.save(model_path)
 
     print("Training done starting eval")
 
