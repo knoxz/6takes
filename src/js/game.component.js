@@ -1,3 +1,5 @@
+/* global jQuery */
+
 const WaitBox = {
     show: () => {
         // TODO
@@ -27,7 +29,7 @@ class Deck {
         this.cards = cards;
     }
 
-    display(nextTurn) {
+    display(postAction) {
         const selector = '.player-deck';
         const container = document.querySelector(selector);
         container.innerHTML = '';
@@ -38,14 +40,7 @@ class Deck {
             el.addEventListener('click', (ev) => {
                 WaitBox.show();
                 const idx = ev.target.dataset.idx;
-                const obj = { "action": idx };
-                $.ajax('make_action', {
-                    data: JSON.stringify(obj),
-                    contentType: 'application/json',
-                    type: 'POST',
-                }).done(data => {
-                    this.nextTurn(data);
-                });
+                postAction(idx);
             });
         });
     }
@@ -83,15 +78,7 @@ class Game {
     }
 
     start() {
-        // TODO: send start signal
-        this.nextRound();
-    }
-
-    nextRound(data) {
-        // TODO: fetch game state
-        const fixeddata = jQuery.get('/static/test.state.json', data => {
-            this.display(data);
-        });
+        this.postMove(-1);
     }
 
     display(data) {
@@ -110,11 +97,10 @@ class Game {
             const sum = player[1].penalty_sum;
             return { name: name, sum: sum };
         });
-        console.log(points);
         this.displayPoints(points);
 
         this.table.display();
-        this.deck.display(data => this.nextRound(data));
+        this.deck.display(idx => this.postMove(idx));
     }
 
     displayPoints(players) {
@@ -125,4 +111,18 @@ class Game {
             container.insertAdjacentHTML('beforeend', html);
         });
     }
+
+    postMove(idx) {
+        const obj = { "action": idx };
+        jQuery.ajax('make_action', {
+            data: JSON.stringify(obj),
+            contentType: 'application/json',
+            type: 'POST',
+        }).done(data => {
+            this.display(data);
+        });
+    }
 }
+
+const G = new Game();
+window.addEventListener('DOMContentLoaded', () => G.start());
