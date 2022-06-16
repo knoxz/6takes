@@ -15,7 +15,7 @@ class Card {
     }
 
     toDiv() {
-        const toSkull = () => '<img src="assets/skull-solid.svg">';
+        const toSkull = () => '<img src="/static/skull-solid.svg">';
         const skulls = Array.from({ length: this.cattle }, toSkull).join('');
         return `<div class="card" data-idx="${this.idx}"><div class="skulls top">${skulls}</div><div class="num">${this.num}</div><div class="skulls bottom">${skulls}</div></div>`;
     }
@@ -38,10 +38,13 @@ class Deck {
             el.addEventListener('click', (ev) => {
                 WaitBox.show();
                 const idx = ev.target.dataset.idx;
-                jQuery.post('/make_action', {
-                    "action": idx
-                }, data => {
-                    nextTurn(data);
+                const obj = { "action": idx };
+                $.ajax('make_action', {
+                    data: JSON.stringify(obj),
+                    contentType: 'application/json',
+                    type: 'POST',
+                }).done(data => {
+                    this.nextTurn(data);
                 });
             });
         });
@@ -107,7 +110,7 @@ class Game {
             const sum = player[1].penalty_sum;
             return { name: name, sum: sum };
         });
-        console.log(points)
+        console.log(points);
         this.displayPoints(points);
 
         this.table.display();
