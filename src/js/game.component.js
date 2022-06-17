@@ -2,10 +2,11 @@
 
 const WaitBox = {
     show: () => {
-        // TODO
+        document.body.insertAdjacentHTML('beforeend', `<div class="waitbox"></div>`)
     },
     hide: () => {
-        // TODO
+        const el = document.querySelector('.waitbox');
+        if (el != null) el.remove();
     }
 };
 
@@ -131,6 +132,7 @@ class Game {
             type: 'POST',
         }).done(data => {
             this.display(data);
+            WaitBox.hide();
         });
     }
 }
