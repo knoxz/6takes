@@ -10,6 +10,9 @@ const WaitBox = {
     }
 };
 
+const NUM = 0;
+const CATTLE = 1;
+
 class Card {
     constructor(idx, num, cattle) {
         this.idx = idx;
@@ -17,14 +20,21 @@ class Card {
         this.cattle = cattle;
     }
 
-    toDiv() {
+    toDiv(playerName) {
         const toSkull = () => '<img src="/static/skull-solid.svg">';
         const skulls = Array.from({ length: this.cattle }, toSkull).join('');
+        const playerDiv = playerName != null ? `<div class="player-name">${playerName}</div>` : '';
+
         return `
             <div class="card" data-idx="${this.idx}">
                 <div class="skulls top">${skulls}</div>
                 <div class="num">${this.num}</div>
+                ${playerDiv}
             </div>`;
+    }
+
+    toString() {
+        return `Card: ${this.num}`;
     }
 }
 
@@ -52,38 +62,75 @@ class Deck {
 }
 
 class Table {
-    constructor() {
+
+    constructor(nameFn) {
         this.rows = [];
+        this.nameFn = nameFn;
     }
 
-    update(rows) {
-        this.rows = rows;
+    update(round, tableRows, moves) {
+        this.prev = round === 1 ? tableRows : this.rows;
+        this.rows = this.prev;
+        this.moves = moves;
     }
 
     display() {
+        this.renderPrevious();
+        this.addMove();
+    }
+
+    renderPrevious() {
         const selector = '.table';
         const container = document.querySelector(selector);
         container.innerHTML = '';
 
-        this.rows.forEach(row => {
+        this.prev.forEach((row, i) => {
             const cards = row.map(card => card.toDiv()).join('');
-            const div = `<div class="row">${cards}</div>`;
+            const div = `<div class="row row${i}">${cards}</div>`;
             container.insertAdjacentHTML('beforeend', div);
         });
     }
-}
 
-const NUM = 0;
-const CATTLE = 1;
+    addMove() {
+        if (this.moves.length === 0) {
+            WaitBox.hide();
+            return;
+        }
+
+        const move = this.moves.shift();
+        const [player, card, row, replacing] = move;
+        this.addCard(player, card, row, replacing);
+
+        setTimeout(() => this.addMove(), 500);
+    }
+
+    addCard(playerIdx, cardArr, row, replacing) {
+        // idx doesn't matter for played cards
+        const toCard = arr => new Card(0, arr[NUM], arr[CATTLE]);
+        const card = toCard(cardArr);
+
+        const player = `player_${playerIdx}`;
+        const playerName = this.nameFn(player);
+
+        if (replacing) this.rows[row] = [];
+        this.rows[row].push(card);
+        const html = card.toDiv(playerName);
+
+        const elRow = document.querySelector(`.table .row${row}`);
+        if (replacing) elRow.innerHTML = '';
+        elRow.insertAdjacentHTML('beforeend', html);
+    }
+}
 
 class Game {
 
     constructor() {
-        this.table = new Table();
+        this.table = new Table((player) => this.getName(player));
         this.deck = new Deck();
     }
 
     start() {
+        this.round = 0;
         this.randomizeNames();
         this.postMove(-1);
     }
@@ -100,27 +147,28 @@ class Game {
         this.names = NAMES.slice(10);
     }
 
+    getName(player) {
+        const id = player.match(/\d+/)[0];
+        if (id > 1) return this.names[id];
+        else if (id == 0) return 'AI';
+        else if (id == 1) return 'YOU';
+        else return 'ERROR';
+    }
+
     display(data) {
-        const toRow = obj => Array.from(obj, toCard).filter(nonZero);
         const toCard = (obj, idx) => new Card(idx, obj[NUM], obj[CATTLE]);
+        const toRow = obj => Array.from(obj, toCard).filter(nonZero);
         const nonZero = card => card.num > 0;
 
         const tableRows = data.piles.map(toRow);
-        this.table.update(tableRows);
+        const moves = data.played_round;
+        this.table.update(this.round, tableRows, moves);
 
         const handCards = Array.from(data.hand_cards, toCard).filter(nonZero);
         this.deck.update(handCards);
 
-        const getName = player => {
-            const id = player[0].match(/\d+/)[0];
-            if (id > 1) return this.names[id];
-            else if (id == 0) return 'AI';
-            else if (id == 1) return 'YOU';
-            else return 'ERROR';
-        };
-
         const scores = Object.entries(data.player_dict).map(player => {
-            const name = getName(player);
+            const name = this.getName(player[0]);
             const sum = player[1].penalty_sum;
             return { name: name, sum: sum };
         });
@@ -132,7 +180,7 @@ class Game {
         if (handCards.length == 0) data.done = true;
 
         if (data.done) {
-            this.showEndScreen(scores);
+            setTimeout(() => this.showEndScreen(scores), 5000);
         }
     }
 
@@ -186,8 +234,8 @@ class Game {
             contentType: 'application/json',
             type: 'POST',
         }).done(data => {
+            this.round += 1;
             this.display(data);
-            WaitBox.hide();
         });
     }
 }
