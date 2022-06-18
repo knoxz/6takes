@@ -1,3 +1,4 @@
+/* global require */
 'use strict';
 
 const del = require('del');
@@ -24,6 +25,7 @@ const paths = {
     },
     scripts: {
         src: [
+            './src/js/names.data.js',
             './src/js/game.component.js'
         ],
         dest: './static/'

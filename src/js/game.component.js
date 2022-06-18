@@ -1,8 +1,8 @@
-/* global jQuery */
+/* global jQuery, NAMES */
 
 const WaitBox = {
     show: () => {
-        document.body.insertAdjacentHTML('beforeend', `<div class="waitbox"></div>`)
+        document.body.insertAdjacentHTML('beforeend', `<div class="waitbox"></div>`);
     },
     hide: () => {
         const el = document.querySelector('.waitbox');
@@ -45,7 +45,6 @@ class Deck {
             el.addEventListener('click', (ev) => {
                 WaitBox.show();
                 const idx = ev.target.dataset.idx;
-                console.log('posting', idx);
                 postAction(idx);
             });
         });
@@ -85,7 +84,20 @@ class Game {
     }
 
     start() {
+        this.randomizeNames();
         this.postMove(-1);
+    }
+
+    randomizeNames() {
+        const shuffle = array => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        };
+
+        shuffle(NAMES);
+        this.names = NAMES.slice(10);
     }
 
     display(data) {
@@ -99,21 +111,64 @@ class Game {
         const handCards = Array.from(data.hand_cards, toCard).filter(nonZero);
         this.deck.update(handCards);
 
-        const points = Object.entries(data.player_dict).map(player => {
-            const name = player[0];
+        const getName = player => {
+            const id = player[0].match(/\d+/)[0];
+            if (id > 1) return this.names[id];
+            else if (id == 0) return 'AI';
+            else if (id == 1) return 'YOU';
+            else return 'ERROR';
+        };
+
+        const scores = Object.entries(data.player_dict).map(player => {
+            const name = getName(player);
             const sum = player[1].penalty_sum;
             return { name: name, sum: sum };
         });
-        this.displayPoints(points);
+        this.displayScores(scores);
 
         this.table.display();
         this.deck.display(idx => this.postMove(idx));
+
+        if (handCards.length == 0) data.done = true;
+
+        if (data.done) {
+            this.showEndScreen(scores);
+        }
     }
 
-    displayPoints(players) {
+    showEndScreen(playerScores) {
+        WaitBox.show();
+
+        const byScore = (p1, p2) => p1.sum < p2.sum;
+        playerScores.sort(byScore);
+
+        const inner = playerScores.map(score => {
+            return `
+                <div class="score-row">
+                    <div class="player-name">${score.name}</div>
+                    <div class="player-sum">${score.sum}</div>
+                </div>`;
+        }).join('');
+
+        const container = `
+            <div class="end-screen">
+                ${inner}
+                <br /><div class="button play-again">Play again</div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', container);
+
+        const el = document.querySelector('.play-again');
+        el.addEventListener('click', () => {
+            const dialog = document.querySelector('.end-screen');
+            if (dialog != null) dialog.remove();
+            this.start();
+        });
+    }
+
+    displayScores(playerScores) {
         const container = document.querySelector('.points');
         container.innerHTML = '';
-        players.forEach(p => {
+        playerScores.forEach(p => {
             p.sum *= -1;
             const html = `
                 <div class="entry ${p.name}">

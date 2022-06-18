@@ -10,6 +10,8 @@ body {
     padding: 10px;
 
     background: url('/static/dark-wood.jpg');
+
+    user-select: none;
 }
 
 div {
@@ -104,27 +106,6 @@ div {
         padding: 10px;
         border-radius: 10px;
 
-        &.player_0,
-        &.player_1 {
-            &::before {
-                background: rgba(238, 238, 238, 0.5);
-                color: var(--border-color);
-                position: absolute;
-                left: -10px;
-                transform: translate(-100%, 0);
-                padding: 10px;
-                border-radius: 10px;
-            }
-        }
-
-        &.player_0::before {
-            content: 'AI';
-        }
-
-        &.player_1::before {
-            content: 'YOU';
-        }
-
         &:last-child {
             margin-bottom: 0;
         }
@@ -132,6 +113,67 @@ div {
 
     .sum {
         font-size: 2em;
+    }
+}
+
+.button {
+    margin: 0 auto;
+    padding: 10px;
+
+    background: var(--border-color);
+    color: var(--card-color);
+
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    &:hover {
+        background: var(--hover-color);
+        color: var(--border-color);
+    }
+}
+
+.end-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    min-width: 25%;
+    max-width: 75%;
+    max-height: 90%;
+
+    background: var(--card-color);
+    border: 5px solid var(--border-color);
+    color: var(--border-color);
+    border-radius: 10px;
+    padding: 1em 1.5em;
+
+    z-index: 2000;
+
+    .score-row {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid var(--border-color);
+        line-height: 3em;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .player-name {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-right: 1em;
+        flex: auto;
+    }
+
+    .player-sum {
+        font-size: 2em;
+        width: 3em;
+        text-align: right;
+        flex: 0 1 5em;
     }
 }
 
