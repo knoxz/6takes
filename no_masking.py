@@ -2,15 +2,10 @@
 import random
 from pathlib import Path
 
-import numpy as np
-from sb3_contrib import MaskablePPO
-from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.evaluation import evaluate_policy
-
-from sb3_contrib.common.envs import InvalidActionEnvDiscrete
-
 import gym
 from gym import spaces
+import time
 
 import models
 
@@ -22,25 +17,21 @@ number_of_players = 10
 table_piles = 4
 
 # Agent Config
-total_timesteps = 150000
+total_timesteps = 600000
 n_epochs = 10
-
-
-# def mask_fn(envo: gym.Env) -> np.ndarray:
-#     return envo.get_action_masks()
 
 
 class SixthTakes(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self, number_of_players):
+    def __init__(self):
         super(SixthTakes, self).__init__()
         # Define action and observation space
-        self.number_of_players = number_of_players
+        # self.number_of_players = number_of_players
         self.cards = []
         self.players = []
         self.table = models.Table(table_piles)
-        self.create_player(self.number_of_players)
+        self.create_player(number_of_players)
         self.round = 0
         self.reward = 0
         self.selected_wrong_card = 0
@@ -53,52 +44,51 @@ class SixthTakes(gym.Env):
             {
                 "hand_cards": spaces.Box(0, 104, shape=(10, 2), dtype=int),
                 "played_card_index": spaces.Discrete(10),
-                "played_this_round": spaces.Box(0, 104, shape=(number_of_players, 2), dtype=int),
+                "played_last_round": spaces.Box(0, 104, shape=(number_of_players, 2), dtype=int),
                 "piles": spaces.Box(0, 104, shape=(4, 5, 2), dtype=int),
                 "played_cards": spaces.Box(0, 104, shape=(4 + (number_of_players * 10), 2), dtype=int),
             }
         )
 
-        # self.observation_space = spaces.Tuple((spaces.Box(0, 104, shape=(10, 2), dtype=int),
-        #                                        spaces.Box(0, 104, shape=(4, 5, 2), dtype=int),
-        #                                        spaces.Box(0, 104, shape=(110, 2), dtype=int),
-        #                                        ))
-        # self.observation_space = spaces.Box(low=0, high=255,
-        #                                     shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8)
-        # print(self.observation_space.sample())
-
     def get_obs(self):
-        pile_array, played_cards_array, played_this_round = self.table.array()
+        pile_array, played_cards_array, played_last_round = self.table.array()
         hand_cards, played_card_index = self.players[0].array()
         return {"hand_cards": hand_cards,
                 "played_card_index": played_card_index,
-                "played_this_round": played_this_round,
+                "played_last_round": played_last_round,
                 "piles": pile_array,
-                "played_cards": played_cards_array}
+                "played_cards": played_cards_array
+                }
 
     def get_action_masks(self):
-        return np.arange(0, len(self.players[0].hand_cards))
+        # return np.arange(0, len(self.players[0].hand_cards))
+        number_of_hand_cards = len(self.players[0].hand_cards)
+        possible_actions = []
+        for i in range(10):
+            if i < number_of_hand_cards:
+                possible_actions.append(True)
+            else:
+                possible_actions.append(False)
+        return possible_actions
 
     def step(self, action):
         round_reward = 0
         round_done = False
-
+        # self.invalid_actions = np.arange(9 - self.round, len(self.players[0].hand_cards))
         valid_card_selected = self.players[0].select_playing_card(action)
         if valid_card_selected:
             self.play_round()
+            round_reward -= self.players[0].penalty
+            # reward -= self.selected_wrong_card * 100
+            self.round += 1
+            if self.round == 10:
+                round_done = True
+                if info_print:
+                    print(f"Round:{self.round} Reward: {round_reward}")
         else:
             self.selected_wrong_card += 1
             round_done = True
-            round_reward = -1000
-
-        round_reward -= self.players[0].penalty_sum
-        # reward -= self.selected_wrong_card * 100
-        self.round += 1
-
-        if self.round == 10:
-            round_done = True
-            if info_print:
-                print(f"Round:{self.round} Reward: {round_reward}")
+            round_reward = -1000 + (100 * self.round)
 
         round_info = {}
         return self.get_obs(), round_reward, round_done, round_info
@@ -110,7 +100,7 @@ class SixthTakes(gym.Env):
         self.cards = []
         self.players = []
         self.table = models.Table(table_piles)
-        self.create_player(self.number_of_players)
+        self.create_player(number_of_players)
         self.round = 0
         self.reset_playing_cards()
         for player in self.players:
@@ -146,28 +136,34 @@ class SixthTakes(gym.Env):
         for player in self.players:
             # This is random for now.
             if not player.played:
-                player.select_playing_card()
+                # player.select_smart_playing_card(self.table)
+                player.select_smart_playing_card(self.table)
             self.table.played_this_round.append(player.played)
         sorted_player_list = sorted(self.players, key=lambda player_sort: player_sort.played.number, reverse=True)
         if debug_print:
             print(f"Sorted Player List: {sorted_player_list}")
         if debug_print:
             self.table.print_table()
+        round_list = []
         for _ in range(len(self.players)):
             playing_player = sorted_player_list.pop()
+            card_played = playing_player.played
             if debug_print:
                 print(f"Player {playing_player.id} will play Card {playing_player.played} will be played!")
-            penalty = self.table.play_card_onto_table(playing_player.played)
+            penalty, pile_id, replacing = self.table.play_card_onto_table(playing_player.played)
+            round_list.append([playing_player.id, [card_played.number, card_played.value], pile_id, replacing])
             for player in self.players:
                 if player.id == playing_player.id:
                     player.played = None
+                    player.penalty = penalty
                     player.penalty_sum = player.penalty_sum + penalty
             if debug_print:
                 self.table.print_table()
+        return round_list
 
 
 if __name__ == "__main__":
-    env = SixthTakes(10)
+    env = SixthTakes()
     # env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 
     # episodes = 1000
@@ -187,18 +183,35 @@ if __name__ == "__main__":
     from stable_baselines3 import DQN, A2C, PPO
 
     # states = env.observation_space.shape
+    # env.reset()
+    # observation = env.get_obs()
+    #
+    # to_json_dict = {
+    #     "hand_cards": observation["hand_cards"].astype(int).tolist(),
+    #     "piles": observation["piles"].astype(int).tolist(),
+    #     "played_cards": observation["played_cards"].astype(int).tolist(),
+    # }
+    # json_string = json.dumps(to_json_dict, indent=4)
+    #
+    # print(json_string)
     # actions = env.action_space.n
 
-    log_path = Path("Training", "Logs")
+    from stable_baselines3 import DQN, A2C, PPO
+
+    # states = env.observation_space.shape
+    # actions = env.action_space.n
+
+    log_path = Path("Training", "Logs", "PPO")
     log_path.mkdir(parents=True, exist_ok=True)
 
     # model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log=log_path)
-    model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log=log_path, n_epochs=n_epochs)
+    model = PPO("MultiInputPolicy", env, n_steps=10000, batch_size=1000, n_epochs=n_epochs, verbose=1,
+                tensorboard_log=log_path, device="cuda")
     model.learn(total_timesteps=total_timesteps, log_interval=4)
 
-    dqn_path = Path("Training", "Models", "Maskable_PPO")
+    model_path = Path("Training", "Models", f"PPO-{int(time.time())}")
 
-    model.save(dqn_path)
+    model.save(model_path)
 
     eval = evaluate_policy(model, env, n_eval_episodes=1000, render=False)
     print(eval)

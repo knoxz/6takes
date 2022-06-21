@@ -2,11 +2,12 @@ import random
 
 import numpy as np
 
-from without_masking import number_of_players
+debug_print = False
 
 
 class Card:
     def __init__(self, number):
+        self.current_value = 0
         self.number = number
         if number == 55:
             self.value = 7
@@ -20,7 +21,7 @@ class Card:
             self.value = 1
 
     def __repr__(self):
-        return f"<Card Number: {self.number} , Value: {self.value}>"
+        return f"<Card Number: {self.number} , Value: {self.value}, current_value: {self.current_value}>"
 
     def compare(self, card):
         if self.number > card.number:
@@ -33,8 +34,9 @@ class Card:
 
 
 class Table:
-    def __init__(self, slots):
+    def __init__(self, slots=4, number_of_players=10):
         self.slots = slots
+        self.number_of_players = number_of_players
         self.table_slots = []
         self.played_cards = []
         self.played_this_round = []
@@ -48,16 +50,16 @@ class Table:
                 if y < len(self.table_slots[i]):
                     table_piles_array[i][y][0] = self.table_slots[i][y].number
                     table_piles_array[i][y][1] = self.table_slots[i][y].value
-        played_cards_array = np.zeros((4 + (10 * number_of_players), 2))
+        played_cards_array = np.zeros((4 + (10 * self.number_of_players), 2))
         for i in range(len(self.played_cards)):
             played_cards_array[i][0] = self.played_cards[i].number
             played_cards_array[i][1] = self.played_cards[i].value
-        # played_this_round = np.zeros((number_of_players, 2))
-        # for i in range(len(self.played_this_round)):
-        #     played_this_round[i][0] = self.played_this_round[i].number
-        #     played_this_round[i][1] = self.played_this_round[i].value
-        # return table_piles_array, played_cards_array, played_this_round
-        return table_piles_array, played_cards_array
+        played_this_round = np.zeros((self.number_of_players, 2))
+        for i in range(len(self.played_this_round)):
+            played_this_round[i][0] = self.played_this_round[i].number
+            played_this_round[i][1] = self.played_this_round[i].value
+        return table_piles_array, played_cards_array, played_this_round
+        # return table_piles_array, played_cards_array,
 
     def print_table(self):
         for idx, table_slot in enumerate(self.table_slots):
@@ -78,7 +80,6 @@ class Table:
             if card.number > table_slot[-1].number and distance > (card.number - table_slot[-1].number):
                 tableslot_to_play_on = idx
                 distance = card.number - table_slot[-1].number
-        from without_masking import debug_print
         if debug_print:
             print(f"Playing Card: {card} on Table: {tableslot_to_play_on} with distance {distance}")
         if tableslot_to_play_on == -1:
@@ -121,14 +122,15 @@ class Player:
         self.played = None
         self.penalty_cards = []
         self.penalty_sum = 0
+        self.penalty = 0
 
     def array(self):
         array = np.zeros((10, 2))
         for i in range(len(self.hand_cards)):
             array[i][0] = self.hand_cards[i].number
             array[i][1] = self.hand_cards[i].value
-        # return array, self.played_card_index
-        return array
+        return array, self.played_card_index
+        # return array
 
     def select_playing_card(self, played_card_index=None):
         if played_card_index is None:
@@ -142,6 +144,29 @@ class Player:
             return False
         self.played = self.hand_cards.pop(played_card_index)
         return True
+
+    def select_smart_playing_card(self, table):
+        for card in self.hand_cards:
+            card.current_value = -105
+            for table_slot in table.table_slots:
+                highest_number = table_slot[-1].number
+                cards_open_on_pile = 5 - len(table_slot)
+                distance_between_card_and_pile = card.number - highest_number
+                if 0 <= distance_between_card_and_pile <= cards_open_on_pile:
+                    new_value = 104 - distance_between_card_and_pile
+                elif 0 <= distance_between_card_and_pile >= cards_open_on_pile >= 3:
+                    new_value = 104 - distance_between_card_and_pile
+                elif cards_open_on_pile <= 2 and 0 <= distance_between_card_and_pile:
+                    new_value = -(104 - distance_between_card_and_pile)
+                else:
+                    new_value = 0
+                if new_value > card.current_value:
+                    card.current_value = new_value
+        self.hand_cards = sorted(self.hand_cards, key=lambda card_sort: card_sort.current_value, reverse=True)
+
+        if debug_print:
+            print(table.table_slots, self.hand_cards)
+        self.played = self.hand_cards.pop(0)
 
     def __repr__(self):
         return f"<Player {self.id} Penalty_sum: {self.penalty_sum} Playing Card: {self.played}>"

@@ -1,6 +1,7 @@
 # Settings
 import json
 import random
+import time
 from pathlib import Path
 
 import numpy as np
@@ -15,16 +16,16 @@ from gym import spaces
 
 import models
 
-debug_print = True
-info_print = True
+debug_print = False
+info_print = False
 
 # 6 Nimmt Config
 number_of_players = 10
 table_piles = 4
 
 # Agent Config
-total_timesteps = 150000
-n_epochs = 20
+total_timesteps = 2000000
+n_epochs = 10
 
 
 def mask_fn(envo: gym.Env) -> np.ndarray:
@@ -53,15 +54,19 @@ class SixthTakes(InvalidActionEnvDiscrete):
         self.observation_space = spaces.Dict(
             {
                 "hand_cards": spaces.Box(0, 104, shape=(10, 2), dtype=int),
+                "played_card_index": spaces.Discrete(10),
+                "played_last_round": spaces.Box(0, 104, shape=(number_of_players, 2), dtype=int),
                 "piles": spaces.Box(0, 104, shape=(4, 5, 2), dtype=int),
                 "played_cards": spaces.Box(0, 104, shape=(4 + (number_of_players * 10), 2), dtype=int),
             }
         )
 
     def get_obs(self):
-        pile_array, played_cards_array = self.table.array()
-        hand_cards = self.players[0].array()
+        pile_array, played_cards_array, played_last_round = self.table.array()
+        hand_cards, played_card_index = self.players[0].array()
         return {"hand_cards": hand_cards,
+                "played_card_index": played_card_index,
+                "played_last_round": played_last_round,
                 "piles": pile_array,
                 "played_cards": played_cards_array
                 }
@@ -82,16 +87,10 @@ class SixthTakes(InvalidActionEnvDiscrete):
         round_done = False
         # self.invalid_actions = np.arange(9 - self.round, len(self.players[0].hand_cards))
         valid_card_selected = self.players[0].select_playing_card(action)
-        # if valid_card_selected:
-        #     self.play_round()
-        # else:
-        #     self.selected_wrong_card += 1
-        #     round_done = True
-        #     round_reward = -1000
         if not valid_card_selected:
             print("SHOULD NOT HAPPEN!")
         self.play_round()
-        round_reward -= self.players[0].penalty_sum
+        round_reward -= self.players[0].penalty
         # reward -= self.selected_wrong_card * 100
         self.round += 1
 
@@ -146,7 +145,7 @@ class SixthTakes(InvalidActionEnvDiscrete):
         for player in self.players:
             # This is random for now.
             if not player.played:
-                player.select_playing_card()
+                player.select_smart_playing_card(self.table)
             self.table.played_this_round.append(player.played)
         sorted_player_list = sorted(self.players, key=lambda player_sort: player_sort.played.number, reverse=True)
         if debug_print:
@@ -164,6 +163,7 @@ class SixthTakes(InvalidActionEnvDiscrete):
             for player in self.players:
                 if player.id == playing_player.id:
                     player.played = None
+                    player.penalty = penalty
                     player.penalty_sum = player.penalty_sum + penalty
             if debug_print:
                 self.table.print_table()
@@ -190,29 +190,29 @@ if __name__ == "__main__":
 
     from stable_baselines3 import DQN, A2C, PPO
 
-    states = env.observation_space.shape
-    env.reset()
-    observation = env.get_obs()
+    # states = env.observation_space.shape
+    # env.reset()
+    # observation = env.get_obs()
+    #
+    # to_json_dict = {
+    #     "hand_cards": observation["hand_cards"].astype(int).tolist(),
+    #     "piles": observation["piles"].astype(int).tolist(),
+    #     "played_cards": observation["played_cards"].astype(int).tolist(),
+    # }
+    # json_string = json.dumps(to_json_dict, indent=4)
+    #
+    # print(json_string)
+    # actions = env.action_space.n
 
-    to_json_dict = {
-        "hand_cards": observation["hand_cards"].astype(int).tolist(),
-        "piles": observation["piles"].astype(int).tolist(),
-        "played_cards": observation["played_cards"].astype(int).tolist(),
-    }
-    json_string = json.dumps(to_json_dict, indent=4)
-
-    print(json_string)
-    actions = env.action_space.n
-
-    log_path = Path("Training", "Logs")
+    log_path = Path("Training", "Logs", "MaskablePPO")
     log_path.mkdir(parents=True, exist_ok=True)
 
     # model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log=log_path)
-    model = MaskablePPO(MaskableMultiInputActorCriticPolicy, env, verbose=1, tensorboard_log=log_path,
-                        n_epochs=n_epochs)
+    model = MaskablePPO(MaskableMultiInputActorCriticPolicy, env, n_steps=10000, batch_size=1000, n_epochs=n_epochs,
+                        verbose=1, tensorboard_log=log_path)
     model.learn(total_timesteps=total_timesteps, log_interval=4)
 
-    model_path = Path("Training", "Models", "Maskable_PPO")
+    model_path = Path("Training", "Models", f"Maskable_PPO-{int(time.time())}")
 
     model.save(model_path)
 
