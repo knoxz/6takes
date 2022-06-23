@@ -98,7 +98,7 @@ class Table {
         const [player, card, row, replacing] = move;
         this.addCard(player, card, row, replacing);
 
-        setTimeout(() => this.addMove(), 500);
+        setTimeout(() => this.addMove(), 1000);
     }
 
     addCard(playerIdx, cardArr, row, replacing) {
@@ -185,7 +185,7 @@ class Game {
         if (handCards.length == 0) data.done = true;
 
         if (data.done) {
-            setTimeout(() => this.showEndScreen(scores), 5000);
+            setTimeout(() => this.showEndScreen(scores), 10000);
         }
     }
 
