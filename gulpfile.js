@@ -39,7 +39,7 @@ const paths = {
         dest: './static/'
     },
     assets: {
-        src: './src/assets/*.*',
+        src: './src/assets/**/*.*',
         dest: './static/'
     }
 };

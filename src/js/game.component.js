@@ -21,14 +21,11 @@ class Card {
     }
 
     toDiv(playerName) {
-        const toSkull = () => '<img src="/static/skull-solid.svg">';
-        const skulls = Array.from({ length: this.cattle }, toSkull).join('');
         const playerDiv = playerName != null ? `<div class="player-name">${playerName}</div>` : '';
+        const url = `url('/static/cards/${this.num}.png')`;
 
         return `
-            <div class="card" data-idx="${this.idx}">
-                <div class="skulls top">${skulls}</div>
-                <div class="num">${this.num}</div>
+            <div class="card" data-idx="${this.idx}" style="background-image: ${url}">
                 ${playerDiv}
             </div>`;
     }
@@ -127,6 +124,14 @@ class Game {
     constructor() {
         this.table = new Table((player) => this.getName(player));
         this.deck = new Deck();
+        this.preloadImages();
+    }
+
+    preloadImages() {
+        Array.from({ length: 103 }, (_, i) => {
+            let img = new Image();
+            img.src = `/static/cards/${i + 1}.png`;
+        });
     }
 
     start() {
