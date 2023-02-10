@@ -9,7 +9,7 @@ from with_masking import SixthTakes, mask_fn
 
 app = Flask(__name__)
 
-model_path = Path("Training", "Models", "Maskable_PPO")
+model_path = Path("Training", "Models", "Maskable_PPO-1655841088")
 
 model = MaskablePPO.load(model_path, print_system_info=True)
 masking_env = SixthTakes()
@@ -19,10 +19,11 @@ current_observation = masking_env.get_obs()
 
 def observation_to_json(observation, players, done, played_round=[]):
     player_dict = {}
+    hand_cards_list, _ = players[1].array()
     for player in players:
         player_dict[f"player_{player.id}"] = {"penalty_sum": int(player.penalty_sum)}
     to_json_dict = {
-        "hand_cards": players[1].array().astype(int).tolist(),
+        "hand_cards": hand_cards_list.astype(int).tolist(),
         "piles": observation["piles"].astype(int).tolist(),
         "played_cards": observation["played_cards"].astype(int).tolist(),
         "player_dict": player_dict,
